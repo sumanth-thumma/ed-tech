@@ -1,237 +1,241 @@
-# EdTech Backend (Node + Express + PostgreSQL + Sequelize + JWT)
+# EdTech Backend API (Production-Ready)
 
-This project provides a backend API for an EdTech platform with:
+Node.js + Express + TypeScript + PostgreSQL + Sequelize backend for an EdTech platform.
 
-- User registration and login with JWT auth
-- Role-based authorization (student, instructor, admin)
-- Course creation/listing
-- Student enrollments
+## Features
+- JWT auth with role-based access (`student`, `instructor`, `admin`)
+- Controller → service → model → route architecture
+- Course, section, lesson management
+- Enrollments and lesson progress tracking
+- Instructor dashboard analytics
+- Reviews and ratings
+- Search/filter/pagination for courses
+- File uploads via Multer
+- Security stack: Helmet, CORS, rate limiting, validation, centralized error handling
 
 ## Tech Stack
-
 - Node.js
-- Express
+- Express.js
+- TypeScript
 - PostgreSQL
 - Sequelize ORM
-- JWT (jsonwebtoken)
+- JWT + bcryptjs
+- Zod
+
+## Project Structure
+```
+src/
+  config/
+  controllers/
+  middleware/
+  models/
+  routes/
+  services/
+  utils/
+  validations/
+```
 
 ## Setup
-
-1. Install dependencies:
-
 ```bash
 npm install
-```
-
-2. Configure environment:
-
-```bash
 cp .env.example .env
-```
-
-3. Update `.env` with your PostgreSQL credentials.
-
-4. Run the server:
-
-```bash
 npm run dev
 ```
 
-Server runs on `http://localhost:5000` by default.
+## Required Database Tables
+Implemented with Sequelize models + associations:
+- users
+- courses
+- sections
+- lessons
+- enrollments
+- lesson_progress
+- reviews
+
+## Authentication
+JWT payload includes:
+- `sub` (user id)
+- `role`
+
+Pass token as:
+`Authorization: Bearer <token>`
 
 ---
 
-## Complete Endpoint List
+## Complete Endpoints + Sample Data
 
 Base URL: `http://localhost:5000`
 
-### 1) Health Check
+### Auth
+- `POST /auth/register`
+- `POST /auth/login`
+- `GET /auth/me`
 
-- **GET** `/health`
-- **Auth required:** No
-
-### 2) Auth Endpoints
-
-- **POST** `/api/auth/register`
-- **Auth required:** No
-
-- **POST** `/api/auth/login`
-- **Auth required:** No
-
-### 3) Course Endpoints
-
-- **GET** `/api/courses`
-- **Auth required:** No
-
-- **POST** `/api/courses`
-- **Auth required:** Yes (role: `instructor` or `admin`)
-
-### 4) Enrollment Endpoints
-
-- **POST** `/api/enrollments`
-- **Auth required:** Yes (role: `student` or `admin`)
-
-- **GET** `/api/enrollments/me`
-- **Auth required:** Yes (role: `student` or `admin`)
-
----
-
-## Sample Data + Test Requests
-
-> Use these sample payloads directly in Postman/Insomnia or with `curl`.
-
-### A. Health Check
-
-```bash
-curl -X GET http://localhost:5000/health
-```
-
-Expected response:
-
+Register sample:
 ```json
 {
-  "message": "EdTech backend is running"
+  "fullName": "Alice Instructor",
+  "email": "alice@example.com",
+  "password": "Password123",
+  "role": "instructor"
 }
 ```
 
+Login sample:
+```json
+{
+  "email": "alice@example.com",
+  "password": "Password123"
+}
+```
+
+### Users
+- `GET /users/me`
+- `PUT /users/me`
+- `PUT /users/change-password`
+- `GET /users/me/courses`
+- `GET /users` (admin)
+- `DELETE /users/:id` (admin)
+
+Update profile sample:
+```json
+{
+  "fullName": "Alice Updated",
+  "bio": "Senior instructor",
+  "avatar": "https://example.com/avatar.png"
+}
+```
+
+Change password sample:
+```json
+{
+  "currentPassword": "Password123",
+  "newPassword": "NewStrongPass123"
+}
+```
+
+### Courses
+- `POST /courses` (instructor/admin)
+- `GET /courses`
+- `GET /courses/:id`
+- `PUT /courses/:id` (owner/admin)
+- `DELETE /courses/:id` (owner/admin)
+- `GET /instructor/courses` (instructor/admin)
+- `GET /instructor/dashboard` (instructor/admin)
+- `GET /courses/:id/reviews`
+
+Create course sample:
+```json
+{
+  "title": "Mastering TypeScript",
+  "description": "Build production-grade APIs with TS and Node.",
+  "category": "programming",
+  "price": 59.99,
+  "thumbnail": "https://example.com/ts-course.png"
+}
+```
+
+Course search examples:
+- `GET /courses?search=react`
+- `GET /courses?category=programming&page=2&limit=10`
+- `GET /courses?sort=newest`
+
+### Sections
+- `POST /sections`
+- `PUT /sections/:id`
+- `DELETE /sections/:id`
+
+Create section sample:
+```json
+{
+  "courseId": "<courseId>",
+  "title": "Getting Started",
+  "order": 1
+}
+```
+
+### Lessons
+- `POST /lessons`
+- `PUT /lessons/:id`
+- `DELETE /lessons/:id`
+- `GET /lessons/:id`
+
+Create lesson sample:
+```json
+{
+  "sectionId": "<sectionId>",
+  "title": "Intro to TypeScript",
+  "videoUrl": "https://example.com/video.mp4",
+  "content": "Lesson notes",
+  "order": 1,
+  "isPreview": true
+}
+```
+
+### Enrollments
+- `POST /enrollments`
+- `GET /enrollments/my-courses`
+
+Enroll sample:
+```json
+{
+  "courseId": "<courseId>"
+}
+```
+
+### Progress
+- `POST /progress/complete`
+- `GET /progress/course/:courseId`
+
+Complete lesson sample:
+```json
+{
+  "lessonId": "<lessonId>"
+}
+```
+
+Progress response:
+```json
+{
+  "totalLessons": 10,
+  "completedLessons": 6,
+  "progress": 60
+}
+```
+
+### Reviews
+- `POST /reviews`
+- `DELETE /reviews/:id`
+- `GET /courses/:id/reviews`
+
+Review sample:
+```json
+{
+  "courseId": "<courseId>",
+  "rating": 5,
+  "comment": "Excellent course"
+}
+```
+
+### Upload
+- `POST /upload` (multipart/form-data)
+- Field name: `file`
+
 ---
 
-### B. Register Users (Sample Data)
+## Status Codes
+- `200` OK
+- `201` Created
+- `204` No Content
+- `400` Validation error
+- `401` Unauthorized
+- `403` Forbidden
+- `404` Not Found
+- `409` Conflict
+- `500` Internal Server Error
 
-#### 1) Register Instructor
-
-```bash
-curl -X POST http://localhost:5000/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "fullName": "Alice Instructor",
-    "email": "alice.instructor@example.com",
-    "password": "Password123!",
-    "role": "instructor"
-  }'
-```
-
-#### 2) Register Student
-
-```bash
-curl -X POST http://localhost:5000/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "fullName": "Bob Student",
-    "email": "bob.student@example.com",
-    "password": "Password123!",
-    "role": "student"
-  }'
-```
-
-#### 3) Register Admin (optional)
-
-```bash
-curl -X POST http://localhost:5000/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "fullName": "Charlie Admin",
-    "email": "charlie.admin@example.com",
-    "password": "Password123!",
-    "role": "admin"
-  }'
-```
-
----
-
-### C. Login Users and Save Tokens
-
-#### 1) Instructor Login
-
-```bash
-curl -X POST http://localhost:5000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "alice.instructor@example.com",
-    "password": "Password123!"
-  }'
-```
-
-Copy the returned `token` as `INSTRUCTOR_TOKEN`.
-
-#### 2) Student Login
-
-```bash
-curl -X POST http://localhost:5000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "bob.student@example.com",
-    "password": "Password123!"
-  }'
-```
-
-Copy the returned `token` as `STUDENT_TOKEN`.
-
----
-
-### D. Create Course (Instructor/Admin Only)
-
-```bash
-curl -X POST http://localhost:5000/api/courses \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer INSTRUCTOR_TOKEN" \
-  -d '{
-    "title": "Node.js for Beginners",
-    "description": "Learn Node.js fundamentals, Express APIs, and project structure."
-  }'
-```
-
-Copy returned `id` as `COURSE_ID`.
-
----
-
-### E. List Courses (Public)
-
-```bash
-curl -X GET http://localhost:5000/api/courses
-```
-
-This response includes created courses and instructor basic info.
-
----
-
-### F. Enroll Student in a Course
-
-```bash
-curl -X POST http://localhost:5000/api/enrollments \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer STUDENT_TOKEN" \
-  -d '{
-    "courseId": "COURSE_ID"
-  }'
-```
-
----
-
-### G. Get My Enrollments
-
-```bash
-curl -X GET http://localhost:5000/api/enrollments/me \
-  -H "Authorization: Bearer STUDENT_TOKEN"
-```
-
----
-
-## Quick Postman Variables (Optional)
-
-You can set these variables in Postman for easier testing:
-
-- `baseUrl` = `http://localhost:5000`
-- `instructorEmail` = `alice.instructor@example.com`
-- `studentEmail` = `bob.student@example.com`
-- `password` = `Password123!`
-- `instructorToken` = `<paste token after login>`
-- `studentToken` = `<paste token after login>`
-- `courseId` = `<paste course id after course creation>`
-
----
-
-## Notes
-
-- The app uses `sequelize.sync()` on startup for quick bootstrap.
-- For production, prefer Sequelize migrations via `sequelize-cli`.
+## Next.js + TanStack Query Readiness
+- JSON-first predictable responses
+- pagination-ready course listing endpoint
+- JWT Bearer auth compatible with client interceptors
+- modular route layout for feature-based query keys
