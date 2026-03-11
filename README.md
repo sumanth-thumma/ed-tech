@@ -39,28 +39,197 @@ npm run dev
 
 Server runs on `http://localhost:5000` by default.
 
-## API Endpoints
+---
 
-### Health
-- `GET /health`
+## Complete Endpoint List
 
-### Auth
-- `POST /api/auth/register`
-  - body: `{ "fullName": "...", "email": "...", "password": "...", "role": "student|instructor|admin" }`
-- `POST /api/auth/login`
-  - body: `{ "email": "...", "password": "..." }`
+Base URL: `http://localhost:5000`
 
-### Courses
-- `GET /api/courses`
-- `POST /api/courses` (instructor/admin)
-  - Authorization: `Bearer <token>`
-  - body: `{ "title": "...", "description": "..." }`
+### 1) Health Check
 
-### Enrollments
-- `POST /api/enrollments` (student/admin)
-  - Authorization: `Bearer <token>`
-  - body: `{ "courseId": "..." }`
-- `GET /api/enrollments/me` (student/admin)
+- **GET** `/health`
+- **Auth required:** No
+
+### 2) Auth Endpoints
+
+- **POST** `/api/auth/register`
+- **Auth required:** No
+
+- **POST** `/api/auth/login`
+- **Auth required:** No
+
+### 3) Course Endpoints
+
+- **GET** `/api/courses`
+- **Auth required:** No
+
+- **POST** `/api/courses`
+- **Auth required:** Yes (role: `instructor` or `admin`)
+
+### 4) Enrollment Endpoints
+
+- **POST** `/api/enrollments`
+- **Auth required:** Yes (role: `student` or `admin`)
+
+- **GET** `/api/enrollments/me`
+- **Auth required:** Yes (role: `student` or `admin`)
+
+---
+
+## Sample Data + Test Requests
+
+> Use these sample payloads directly in Postman/Insomnia or with `curl`.
+
+### A. Health Check
+
+```bash
+curl -X GET http://localhost:5000/health
+```
+
+Expected response:
+
+```json
+{
+  "message": "EdTech backend is running"
+}
+```
+
+---
+
+### B. Register Users (Sample Data)
+
+#### 1) Register Instructor
+
+```bash
+curl -X POST http://localhost:5000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "fullName": "Alice Instructor",
+    "email": "alice.instructor@example.com",
+    "password": "Password123!",
+    "role": "instructor"
+  }'
+```
+
+#### 2) Register Student
+
+```bash
+curl -X POST http://localhost:5000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "fullName": "Bob Student",
+    "email": "bob.student@example.com",
+    "password": "Password123!",
+    "role": "student"
+  }'
+```
+
+#### 3) Register Admin (optional)
+
+```bash
+curl -X POST http://localhost:5000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "fullName": "Charlie Admin",
+    "email": "charlie.admin@example.com",
+    "password": "Password123!",
+    "role": "admin"
+  }'
+```
+
+---
+
+### C. Login Users and Save Tokens
+
+#### 1) Instructor Login
+
+```bash
+curl -X POST http://localhost:5000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "alice.instructor@example.com",
+    "password": "Password123!"
+  }'
+```
+
+Copy the returned `token` as `INSTRUCTOR_TOKEN`.
+
+#### 2) Student Login
+
+```bash
+curl -X POST http://localhost:5000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "bob.student@example.com",
+    "password": "Password123!"
+  }'
+```
+
+Copy the returned `token` as `STUDENT_TOKEN`.
+
+---
+
+### D. Create Course (Instructor/Admin Only)
+
+```bash
+curl -X POST http://localhost:5000/api/courses \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer INSTRUCTOR_TOKEN" \
+  -d '{
+    "title": "Node.js for Beginners",
+    "description": "Learn Node.js fundamentals, Express APIs, and project structure."
+  }'
+```
+
+Copy returned `id` as `COURSE_ID`.
+
+---
+
+### E. List Courses (Public)
+
+```bash
+curl -X GET http://localhost:5000/api/courses
+```
+
+This response includes created courses and instructor basic info.
+
+---
+
+### F. Enroll Student in a Course
+
+```bash
+curl -X POST http://localhost:5000/api/enrollments \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer STUDENT_TOKEN" \
+  -d '{
+    "courseId": "COURSE_ID"
+  }'
+```
+
+---
+
+### G. Get My Enrollments
+
+```bash
+curl -X GET http://localhost:5000/api/enrollments/me \
+  -H "Authorization: Bearer STUDENT_TOKEN"
+```
+
+---
+
+## Quick Postman Variables (Optional)
+
+You can set these variables in Postman for easier testing:
+
+- `baseUrl` = `http://localhost:5000`
+- `instructorEmail` = `alice.instructor@example.com`
+- `studentEmail` = `bob.student@example.com`
+- `password` = `Password123!`
+- `instructorToken` = `<paste token after login>`
+- `studentToken` = `<paste token after login>`
+- `courseId` = `<paste course id after course creation>`
+
+---
 
 ## Notes
 
