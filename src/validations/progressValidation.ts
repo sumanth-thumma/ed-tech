@@ -1,0 +1,7 @@
+import { z } from 'zod';
+
+export const completeLessonSchema = z.object({
+  body: z.object({
+    lessonId: z.string().uuid()
+  })
+});
