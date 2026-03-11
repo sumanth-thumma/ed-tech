@@ -1,4 +1,5 @@
-import { Course, Enrollment, Lesson, LessonProgress, Section } from '../models';
+import { Op } from 'sequelize';
+import { Enrollment, Lesson, LessonProgress, Section } from '../models';
 import { ApiError } from '../utils/ApiError';
 
 export const completeLesson = async (userId: string, lessonId: string) => {
@@ -19,9 +20,13 @@ export const getCourseProgress = async (userId: string, courseId: string) => {
   const sections = await Section.findAll({ where: { courseId }, include: [{ model: Lesson, as: 'lessons' }] });
   const lessonIds = sections.flatMap((section: any) => (section.lessons || []).map((lesson: any) => lesson.id));
 
-  const completedLessons = await LessonProgress.count({ where: { userId, lessonId: lessonIds, completed: true } });
+  if (lessonIds.length === 0) {
+    return { totalLessons: 0, completedLessons: 0, progress: 0 };
+  }
+
+  const completedLessons = await LessonProgress.count({ where: { userId, lessonId: { [Op.in]: lessonIds }, completed: true } });
   const totalLessons = lessonIds.length;
-  const progress = totalLessons === 0 ? 0 : Number(((completedLessons / totalLessons) * 100).toFixed(2));
+  const progress = Number(((completedLessons / totalLessons) * 100).toFixed(2));
 
   return { totalLessons, completedLessons, progress };
 };

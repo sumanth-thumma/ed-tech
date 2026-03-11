@@ -1,5 +1,5 @@
 import { Op } from 'sequelize';
-import { Course, Enrollment, Review, Section, User } from '../models';
+import { Course, Enrollment, Lesson, Review, Section, User } from '../models';
 import { ApiError } from '../utils/ApiError';
 
 export const createCourse = async (instructorId: string, payload: any) => {
@@ -16,7 +16,7 @@ export const getCourses = async (query: any) => {
   if (query.category) where.category = query.category;
   if (query.published !== undefined) where.published = query.published === 'true';
 
-  const order = query.sort === 'rating' ? [['createdAt', 'DESC']] : [['createdAt', 'DESC']];
+  const order: any = query.sort === 'rating' ? [['createdAt', 'DESC']] : [['createdAt', 'DESC']];
 
   return Course.findAndCountAll({
     where,
@@ -24,6 +24,7 @@ export const getCourses = async (query: any) => {
       { model: User, as: 'instructor', attributes: ['id', 'fullName'] },
       { model: Review, as: 'reviews', attributes: ['id', 'rating'] }
     ],
+    distinct: true,
     limit,
     offset,
     order
@@ -56,10 +57,24 @@ export const deleteCourse = async (courseId: string, userId: string, role: strin
 export const instructorCourses = async (instructorId: string) => Course.findAll({ where: { instructorId } });
 
 export const instructorDashboard = async (instructorId: string) => {
-  const courses = await Course.findAll({ where: { instructorId } });
-  const courseIds = courses.map((course) => course.get('id'));
-  const students = await Enrollment.count({ where: { courseId: courseIds } });
-  const lessons = await Section.count({ where: { courseId: courseIds } });
+  const courses = await Course.findAll({ where: { instructorId }, attributes: ['id'] });
+  const courseIds = courses.map((course) => String(course.get('id')));
+
+  if (courseIds.length === 0) {
+    return {
+      courses: 0,
+      students: 0,
+      revenue: 0,
+      completionRate: 0,
+      lessons: 0
+    };
+  }
+
+  const students = await Enrollment.count({ where: { courseId: { [Op.in]: courseIds } } });
+  const sectionIds = (await Section.findAll({ where: { courseId: { [Op.in]: courseIds } }, attributes: ['id'] })).map((s) => String(s.get('id')));
+  const lessons = sectionIds.length === 0
+    ? 0
+    : await Lesson.count({ where: { sectionId: { [Op.in]: sectionIds } } });
 
   return {
     courses: courses.length,
